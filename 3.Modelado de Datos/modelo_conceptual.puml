@@ -1,0 +1,92 @@
+@startuml
+' === ENTIDADES PRINCIPALES ===
+entity Ciudadano {
+  + dni (PK)
+  --
+  nombre
+  telefono
+  email
+}
+
+entity Denuncia {
+  + codigo (PK)
+  --
+  fecha_creacion
+  descripcion
+  estado
+}
+
+entity Fiscal {
+  + id (PK)
+  --
+  nombre
+  especialidad
+}
+
+entity Evaluacion {
+  + id (PK)
+  --
+  fecha_inicio
+  estado
+}
+
+entity Diligencia {
+  + id (PK)
+  --
+  tipo
+  prioridad
+  estado
+  fecha_limite
+}
+
+entity Investigacion {
+  + id (PK)
+  --
+  fase
+  estado
+}
+
+entity Prueba {
+  + id (PK)
+  --
+  tipo
+  valoracion
+}
+
+entity Acusacion {
+  + id (PK)
+  --
+  nro_expediente
+  fecha_creacion
+  estado
+}
+
+entity Parte {
+  + id (PK)
+  --
+  nombre
+  rol
+}
+
+entity Juzgado {
+  + id (PK)
+  --
+  numero
+  jurisdiccion
+}
+
+' === RELACIONES ===
+Ciudadano "1" -- "n" Denuncia : Realiza >
+Denuncia "1" -- "1" Evaluacion : Genera >
+Denuncia "n" -- "1" Fiscal : Asignada >
+Fiscal "1" -- "n" Evaluacion : Realiza >
+Evaluacion "1" -- "n" Diligencia : Requiere >
+Evaluacion "1" -- "0..1" Investigacion : Inicia >
+Investigacion "1" -- "n" Diligencia : Ejecuta >
+Investigacion "1" -- "n" Prueba : Recolecta >
+Investigacion "0..1" -- "0..1" Acusacion : Formaliza >
+Acusacion "1" -- "n" Prueba : Contiene >
+Acusacion "1" -- "n" Parte : Involucra >
+Fiscal "1" -- "n" Acusacion : Presenta >
+Juzgado "1" -- "n" Acusacion : Recibe >
+@enduml

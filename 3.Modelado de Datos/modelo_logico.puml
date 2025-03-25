@@ -1,0 +1,105 @@
+@startuml
+entity "Ciudadano" {
+  *dni : VARCHAR(10)
+  --
+  nombre : VARCHAR(100)
+  telefono : VARCHAR(15)
+  email : VARCHAR(100)
+}
+
+entity "Fiscal" {
+  *id : INT
+  --
+  nombre : VARCHAR(100)
+  especialidad : VARCHAR(50)
+}
+
+entity "Juzgado" {
+  *id : INT
+  --
+  numero : VARCHAR(20)
+  jurisdiccion : VARCHAR(50)
+}
+
+entity "Denuncia" {
+  *id_denuncia : INT
+  --
+  dni_ciudadano : VARCHAR(10) <<FK>>
+  id_fiscal : INT <<FK>>
+  fecha_creacion : TIMESTAMP
+  descripcion : TEXT
+  estado : VARCHAR(20)
+}
+
+entity "Evaluacion" {
+  *id_evaluacion : INT
+  --
+  id_denuncia : INT <<FK>>
+  id_fiscal : INT <<FK>>
+  fecha_inicio : DATE
+  estado : VARCHAR(20)
+}
+
+entity "Diligencia" {
+  *id_diligencia : INT
+  --
+  id_evaluacion : INT <<FK>>
+  id_investigacion : INT <<FK>>
+  tipo : VARCHAR(50)
+  prioridad : INT
+  estado : VARCHAR(20)
+  fecha_limite : DATE
+}
+
+entity "Investigacion" {
+  *id_investigacion : INT
+  --
+  id_evaluacion : INT <<FK>>
+  id_fiscal : INT <<FK>>
+  fase : VARCHAR(30)
+  estado : VARCHAR(20)
+}
+
+entity "Prueba" {
+  *id_prueba : INT
+  --
+  id_investigacion : INT <<FK>>
+  id_acusacion : INT <<FK>>
+  tipo : VARCHAR(50)
+  valoracion : VARCHAR(50)
+}
+
+entity "Acusacion" {
+  *id_acusacion : INT
+  --
+  id_investigacion : INT <<FK>>
+  id_fiscal : INT <<FK>>
+  id_juzgado : INT <<FK>>
+  nro_expediente : VARCHAR(20)
+  fecha_creacion : DATE
+  estado : VARCHAR(20)
+}
+
+entity "Parte" {
+  *id_parte : INT
+  --
+  id_acusacion : INT <<FK>>
+  nombre : VARCHAR(100)
+  rol : VARCHAR(50)
+}
+
+Ciudadano ||--o{ Denuncia
+Fiscal ||--o{ Denuncia
+Fiscal ||--o{ Evaluacion
+Fiscal ||--o{ Investigacion
+Fiscal ||--o{ Acusacion
+Denuncia ||--o{ Evaluacion
+Evaluacion ||--o{ Diligencia
+Evaluacion ||--o{ Investigacion
+Investigacion ||--o{ Diligencia
+Investigacion ||--o{ Prueba
+Investigacion ||--o{ Acusacion
+Acusacion ||--o{ Prueba
+Acusacion ||--o{ Parte
+Juzgado ||--o{ Acusacion
+@enduml

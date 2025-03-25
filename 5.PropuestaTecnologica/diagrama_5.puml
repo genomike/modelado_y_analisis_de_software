@@ -1,0 +1,16 @@
+@startuml
+skinparam monochrome true
+
+node "Microservicios\nContainerizados" as micro
+node "API Gateway\ncon GraphQL" as api
+node "Frontend SPA\ncon PWA" as front
+database "Base de Datos\nPostgreSQL" as db
+node "Event-Driven Arch\ncon Kafka" as kafka
+node "Servicio de\nNotificaciones" as notif
+
+api --> micro : API
+front --> api : HTTP/HTTPS
+micro --> db
+micro <--> kafka
+kafka <--> notif
+@enduml

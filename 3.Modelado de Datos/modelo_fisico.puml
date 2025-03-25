@@ -1,0 +1,112 @@
+@startuml
+skinparam monochrome true
+skinparam ddlForeignKey line:1;text:italic
+
+entity "CREATE TABLE ciudadano" as ciudadano {
+  + dni VARCHAR(10) PRIMARY KEY
+  --
+  nombre VARCHAR(100) NOT NULL
+  telefono VARCHAR(15)
+  email VARCHAR(100) UNIQUE
+}
+
+entity "CREATE TABLE fiscal" as fiscal {
+  + id_fiscal SERIAL PRIMARY KEY
+  --
+  nombre VARCHAR(100) NOT NULL
+  especialidad VARCHAR(50)
+}
+
+entity "CREATE TABLE juzgado" as juzgado {
+  + id_juzgado SERIAL PRIMARY KEY
+  --
+  numero VARCHAR(20) NOT NULL
+  jurisdiccion VARCHAR(50)
+}
+
+entity "CREATE TABLE denuncia" as denuncia {
+  + id_denuncia SERIAL PRIMARY KEY
+  --
+  fk_dni VARCHAR(10) REFERENCES ciudadano(dni)
+  fk_fiscal INT REFERENCES fiscal(id_fiscal)
+  fecha_creacion TIMESTAMP DEFAULT NOW()
+  descripcion TEXT
+  estado VARCHAR(20) CHECK (estado IN ('recibida','evaluacion','investigacion','acusacion','archivada'))
+}
+
+entity "CREATE TABLE evaluacion" as evaluacion {
+  + id_evaluacion SERIAL PRIMARY KEY
+  --
+  fk_denuncia INT REFERENCES denuncia(id_denuncia)
+  fk_fiscal INT REFERENCES fiscal(id_fiscal)
+  fecha_inicio DATE NOT NULL
+  estado VARCHAR(20) CHECK (estado IN ('en_revision','derivado','en_proceso','cerrado','archivado'))
+}
+
+entity "CREATE TABLE investigacion" as investigacion {
+  + id_investigacion SERIAL PRIMARY KEY
+  --
+  fk_evaluacion INT REFERENCES evaluacion(id_evaluacion)
+  fk_fiscal INT REFERENCES fiscal(id_fiscal)
+  fase VARCHAR(30)
+  estado VARCHAR(20) CHECK (estado IN ('iniciada','en_proceso','concluida','acusacion','sobreseido'))
+}
+
+entity "CREATE TABLE diligencia" as diligencia {
+  + id_diligencia SERIAL PRIMARY KEY
+  --
+  fk_evaluacion INT REFERENCES evaluacion(id_evaluacion)
+  fk_investigacion INT REFERENCES investigacion(id_investigacion)
+  tipo VARCHAR(50) NOT NULL
+  prioridad INT
+  estado VARCHAR(20)
+  fecha_limite DATE
+}
+
+entity "CREATE TABLE acusacion" as acusacion {
+  + id_acusacion SERIAL PRIMARY KEY
+  --
+  fk_investigacion INT REFERENCES investigacion(id_investigacion)
+  fk_fiscal INT REFERENCES fiscal(id_fiscal)
+  fk_juzgado INT REFERENCES juzgado(id_juzgado)
+  nro_expediente VARCHAR(20) UNIQUE
+  fecha_creacion DATE NOT NULL
+  estado VARCHAR(20) CHECK (estado IN ('borrador','formalizada','notificada','admitida','rechazada'))
+}
+
+entity "CREATE TABLE prueba" as prueba {
+  + id_prueba SERIAL PRIMARY KEY
+  --
+  fk_investigacion INT REFERENCES investigacion(id_investigacion)
+  fk_acusacion INT REFERENCES acusacion(id_acusacion)
+  tipo VARCHAR(50)
+  valoracion VARCHAR(50)
+}
+
+entity "CREATE TABLE parte" as parte {
+  + id_parte SERIAL PRIMARY KEY
+  --
+  fk_acusacion INT REFERENCES acusacion(id_acusacion)
+  nombre VARCHAR(100) NOT NULL
+  rol VARCHAR(50) NOT NULL
+}
+
+note bottom of denuncia
+  CREATE INDEX idx_denuncia_estado ON denuncia(estado);
+  CREATE INDEX idx_denuncia_fiscal ON denuncia(fk_fiscal);
+end note
+
+note bottom of evaluacion
+  CREATE INDEX idx_evaluacion_denuncia ON evaluacion(fk_denuncia);
+end note
+
+note bottom of investigacion
+  CREATE INDEX idx_investigacion_evaluacion ON investigacion(fk_evaluacion);
+  CREATE INDEX idx_investigacion_estado ON investigacion(estado);
+end note
+
+note bottom of acusacion
+  CREATE INDEX idx_acusacion_investigacion ON acusacion(fk_investigacion);
+  CREATE INDEX idx_acusacion_juzgado ON acusacion(fk_juzgado);
+end note
+@enduml

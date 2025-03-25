@@ -1,0 +1,11 @@
+@startuml
+skinparam monochrome true
+rectangle "Sistemas Legacy" as A
+rectangle "EFE" as B
+hexagon "Capa de Integración" as C
+database "Base de Datos Unificada" as D
+
+A --> C
+B --> C
+C --> D
+@enduml
