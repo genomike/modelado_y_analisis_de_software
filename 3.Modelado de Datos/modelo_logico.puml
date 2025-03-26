@@ -1,105 +1,161 @@
-@startuml
-entity "Ciudadano" {
-  *dni : VARCHAR(10)
+@startuml Modelo Lógico del Sistema Judicial
+
+' Tablas principales
+entity "PERSONA" as persona {
+  * id_persona : INT <<PK>>
   --
-  nombre : VARCHAR(100)
-  telefono : VARCHAR(15)
-  email : VARCHAR(100)
+  tipo_persona : VARCHAR(50)
+  nombres : VARCHAR(100)
+  apellidos : VARCHAR(100)
+  documento_identidad : VARCHAR(20)
+  tipo_documento : VARCHAR(20)
+  fecha_nacimiento : DATE
+  dirección : VARCHAR(200)
+  teléfono : VARCHAR(20)
+  correo : VARCHAR(100)
 }
 
-entity "Fiscal" {
-  *id : INT
+entity "FUNCIONARIO" as funcionario {
+  * id_funcionario : INT <<PK>>
+  * id_persona : INT <<FK>>
   --
-  nombre : VARCHAR(100)
-  especialidad : VARCHAR(50)
+  cargo : VARCHAR(100)
+  institución : VARCHAR(100)
+  jurisdicción : VARCHAR(100)
+  fecha_ingreso : DATE
+  número_credencial : VARCHAR(50)
 }
 
-entity "Juzgado" {
-  *id : INT
+entity "CASO" as caso {
+  * id_caso : INT <<PK>>
+  * id_fiscal_asignado : INT <<FK>>
   --
-  numero : VARCHAR(20)
-  jurisdiccion : VARCHAR(50)
+  número_caso : VARCHAR(50)
+  fecha_apertura : DATE
+  estado : VARCHAR(50)
+  descripción : TEXT
+  tipo_delito : VARCHAR(100)
+  gravedad : VARCHAR(20)
+  prioridad : VARCHAR(20)
+  fecha_última_actualización : DATE
 }
 
-entity "Denuncia" {
-  *id_denuncia : INT
+entity "DENUNCIA" as denuncia {
+  * id_denuncia : INT <<PK>>
+  * id_caso : INT <<FK>>
   --
-  dni_ciudadano : VARCHAR(10) <<FK>>
-  id_fiscal : INT <<FK>>
-  fecha_creacion : TIMESTAMP
-  descripcion : TEXT
+  fecha_registro : DATE
+  hora_registro : TIME
+  lugar_hechos : VARCHAR(200)
+  fecha_hechos : DATE
+  descripción : TEXT
+  tipo_denuncia : VARCHAR(50)
   estado : VARCHAR(20)
 }
 
-entity "Evaluacion" {
-  *id_evaluacion : INT
+entity "RELACION_PERSONA_CASO" as rel_persona_caso {
+  * id_relacion : INT <<PK>>
+  * id_persona : INT <<FK>>
+  * id_caso : INT <<FK>>
   --
-  id_denuncia : INT <<FK>>
-  id_fiscal : INT <<FK>>
-  fecha_inicio : DATE
+  tipo_relación : VARCHAR(50)
+  fecha_registro : DATE
+  observaciones : TEXT
+}
+
+entity "PRUEBA" as prueba {
+  * id_prueba : INT <<PK>>
+  * id_caso : INT <<FK>>
+  * id_registrador : INT <<FK>>
+  --
+  tipo_prueba : VARCHAR(50)
+  descripción : TEXT
+  fecha_registro : DATE
+  ubicación_física : VARCHAR(200)
   estado : VARCHAR(20)
+  cadena_custodia : BOOLEAN
 }
 
-entity "Diligencia" {
-  *id_diligencia : INT
+entity "AUDIENCIA" as audiencia {
+  * id_audiencia : INT <<PK>>
+  * id_caso : INT <<FK>>
+  * id_juez : INT <<FK>>
   --
-  id_evaluacion : INT <<FK>>
-  id_investigacion : INT <<FK>>
-  tipo : VARCHAR(50)
-  prioridad : INT
+  tipo_audiencia : VARCHAR(100)
+  fecha : DATE
+  hora_inicio : TIME
+  hora_fin : TIME
+  ubicación : VARCHAR(200)
   estado : VARCHAR(20)
-  fecha_limite : DATE
+  resultado : TEXT
 }
 
-entity "Investigacion" {
-  *id_investigacion : INT
+entity "PARTICIPANTE_AUDIENCIA" as part_audiencia {
+  * id_participante : INT <<PK>>
+  * id_audiencia : INT <<FK>>
+  * id_persona : INT <<FK>>
   --
-  id_evaluacion : INT <<FK>>
-  id_fiscal : INT <<FK>>
-  fase : VARCHAR(30)
-  estado : VARCHAR(20)
-}
-
-entity "Prueba" {
-  *id_prueba : INT
-  --
-  id_investigacion : INT <<FK>>
-  id_acusacion : INT <<FK>>
-  tipo : VARCHAR(50)
-  valoracion : VARCHAR(50)
-}
-
-entity "Acusacion" {
-  *id_acusacion : INT
-  --
-  id_investigacion : INT <<FK>>
-  id_fiscal : INT <<FK>>
-  id_juzgado : INT <<FK>>
-  nro_expediente : VARCHAR(20)
-  fecha_creacion : DATE
-  estado : VARCHAR(20)
-}
-
-entity "Parte" {
-  *id_parte : INT
-  --
-  id_acusacion : INT <<FK>>
-  nombre : VARCHAR(100)
+  tipo_participación : VARCHAR(50)
   rol : VARCHAR(50)
+  asistencia : BOOLEAN
+  observaciones : TEXT
 }
 
-Ciudadano ||--o{ Denuncia
-Fiscal ||--o{ Denuncia
-Fiscal ||--o{ Evaluacion
-Fiscal ||--o{ Investigacion
-Fiscal ||--o{ Acusacion
-Denuncia ||--o{ Evaluacion
-Evaluacion ||--o{ Diligencia
-Evaluacion ||--o{ Investigacion
-Investigacion ||--o{ Diligencia
-Investigacion ||--o{ Prueba
-Investigacion ||--o{ Acusacion
-Acusacion ||--o{ Prueba
-Acusacion ||--o{ Parte
-Juzgado ||--o{ Acusacion
+entity "SENTENCIA" as sentencia {
+  * id_sentencia : INT <<PK>>
+  * id_caso : INT <<FK>>
+  * id_juez : INT <<FK>>
+  --
+  fecha_emisión : DATE
+  resultado : VARCHAR(50)
+  pena : TEXT
+  fundamentos : TEXT
+  observaciones : TEXT
+  estado : VARCHAR(20)
+}
+
+entity "EJECUCION_SENTENCIA" as ejecucion {
+  * id_ejecución : INT <<PK>>
+  * id_sentencia : INT <<FK>>
+  * id_responsable : INT <<FK>>
+  --
+  fecha_inicio : DATE
+  fecha_fin_programada : DATE
+  tipo_ejecución : VARCHAR(100)
+  estado : VARCHAR(20)
+  porcentaje_cumplimiento : DECIMAL(5,2)
+  observaciones : TEXT
+}
+
+entity "INFORME_EJECUCION" as informe {
+  * id_informe : INT <<PK>>
+  * id_ejecución : INT <<FK>>
+  * id_autor : INT <<FK>>
+  --
+  fecha_informe : DATE
+  tipo_informe : VARCHAR(50)
+  contenido : TEXT
+  conclusiones : TEXT
+  recomendaciones : TEXT
+}
+
+' Relaciones
+funcionario }|--|| persona
+denuncia }|--|| caso
+caso ||--o{ rel_persona_caso
+persona ||--o{ rel_persona_caso
+caso ||--o{ prueba
+caso ||--o{ audiencia
+caso |o--o| sentencia
+sentencia |o--o| ejecucion
+audiencia ||--o{ part_audiencia
+persona ||--o{ part_audiencia
+ejecucion ||--o{ informe
+funcionario ||--o{ prueba : registra
+funcionario ||--o{ caso : asignado
+funcionario ||--o{ audiencia : preside
+funcionario ||--o{ sentencia : emite
+funcionario ||--o{ ejecucion : supervisa
+funcionario ||--o{ informe : elabora
+
 @enduml

@@ -1,112 +1,192 @@
-@startuml
-skinparam monochrome true
-skinparam ddlForeignKey line:1;text:italic
+@startuml Modelo Físico del Sistema Judicial
 
-entity "CREATE TABLE ciudadano" as ciudadano {
-  + dni VARCHAR(10) PRIMARY KEY
+' Definición de tablas con tipos de datos específicos
+entity "persona" as persona {
+  * id_persona : SERIAL <<PK>>
   --
-  nombre VARCHAR(100) NOT NULL
-  telefono VARCHAR(15)
-  email VARCHAR(100) UNIQUE
+  tipo_persona : VARCHAR(50) NOT NULL
+  nombres : VARCHAR(100) NOT NULL
+  apellidos : VARCHAR(100) NOT NULL
+  documento_identidad : VARCHAR(20) NOT NULL <<UQ>>
+  tipo_documento : VARCHAR(20) NOT NULL
+  fecha_nacimiento : DATE
+  direccion : VARCHAR(200)
+  telefono : VARCHAR(20)
+  correo : VARCHAR(100)
+  fecha_registro : TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  activo : BOOLEAN DEFAULT TRUE
 }
 
-entity "CREATE TABLE fiscal" as fiscal {
-  + id_fiscal SERIAL PRIMARY KEY
+entity "funcionario" as funcionario {
+  * id_funcionario : SERIAL <<PK>>
+  * id_persona : INTEGER NOT NULL <<FK>>
   --
-  nombre VARCHAR(100) NOT NULL
-  especialidad VARCHAR(50)
+  cargo : VARCHAR(100) NOT NULL
+  institucion : VARCHAR(100) NOT NULL
+  jurisdiccion : VARCHAR(100)
+  fecha_ingreso : DATE NOT NULL
+  numero_credencial : VARCHAR(50) <<UQ>>
+  estado : VARCHAR(20) DEFAULT 'ACTIVO'
+  + idx_funcionario_cargo (cargo)
+  + idx_funcionario_institucion (institucion)
 }
 
-entity "CREATE TABLE juzgado" as juzgado {
-  + id_juzgado SERIAL PRIMARY KEY
+entity "caso" as caso {
+  * id_caso : SERIAL <<PK>>
+  * id_fiscal_asignado : INTEGER NOT NULL <<FK>>
   --
-  numero VARCHAR(20) NOT NULL
-  jurisdiccion VARCHAR(50)
+  numero_caso : VARCHAR(50) NOT NULL <<UQ>>
+  fecha_apertura : DATE NOT NULL
+  estado : VARCHAR(50) NOT NULL
+  descripcion : TEXT
+  tipo_delito : VARCHAR(100) NOT NULL
+  gravedad : VARCHAR(20) NOT NULL
+  prioridad : VARCHAR(20) NOT NULL
+  fecha_ultima_actualizacion : TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  + idx_caso_estado (estado)
+  + idx_caso_tipo_delito (tipo_delito)
+  + idx_caso_fecha_apertura (fecha_apertura)
 }
 
-entity "CREATE TABLE denuncia" as denuncia {
-  + id_denuncia SERIAL PRIMARY KEY
+entity "denuncia" as denuncia {
+  * id_denuncia : SERIAL <<PK>>
+  * id_caso : INTEGER NOT NULL <<FK>>
   --
-  fk_dni VARCHAR(10) REFERENCES ciudadano(dni)
-  fk_fiscal INT REFERENCES fiscal(id_fiscal)
-  fecha_creacion TIMESTAMP DEFAULT NOW()
-  descripcion TEXT
-  estado VARCHAR(20) CHECK (estado IN ('recibida','evaluacion','investigacion','acusacion','archivada'))
+  fecha_registro : DATE NOT NULL
+  hora_registro : TIME NOT NULL
+  lugar_hechos : VARCHAR(200)
+  fecha_hechos : DATE NOT NULL
+  descripcion : TEXT NOT NULL
+  tipo_denuncia : VARCHAR(50) NOT NULL
+  estado : VARCHAR(20) NOT NULL
+  + idx_denuncia_fecha_hechos (fecha_hechos)
+  + idx_denuncia_tipo (tipo_denuncia)
 }
 
-entity "CREATE TABLE evaluacion" as evaluacion {
-  + id_evaluacion SERIAL PRIMARY KEY
+entity "relacion_persona_caso" as rel_persona_caso {
+  * id_relacion : SERIAL <<PK>>
+  * id_persona : INTEGER NOT NULL <<FK>>
+  * id_caso : INTEGER NOT NULL <<FK>>
   --
-  fk_denuncia INT REFERENCES denuncia(id_denuncia)
-  fk_fiscal INT REFERENCES fiscal(id_fiscal)
-  fecha_inicio DATE NOT NULL
-  estado VARCHAR(20) CHECK (estado IN ('en_revision','derivado','en_proceso','cerrado','archivado'))
+  tipo_relacion : VARCHAR(50) NOT NULL
+  fecha_registro : DATE NOT NULL
+  observaciones : TEXT
+  + idx_relacion_tipo (tipo_relacion)
+  + idx_uq_persona_caso_tipo UNIQUE (id_persona, id_caso, tipo_relacion)
 }
 
-entity "CREATE TABLE investigacion" as investigacion {
-  + id_investigacion SERIAL PRIMARY KEY
+entity "prueba" as prueba {
+  * id_prueba : SERIAL <<PK>>
+  * id_caso : INTEGER NOT NULL <<FK>>
+  * id_registrador : INTEGER NOT NULL <<FK>>
   --
-  fk_evaluacion INT REFERENCES evaluacion(id_evaluacion)
-  fk_fiscal INT REFERENCES fiscal(id_fiscal)
-  fase VARCHAR(30)
-  estado VARCHAR(20) CHECK (estado IN ('iniciada','en_proceso','concluida','acusacion','sobreseido'))
+  tipo_prueba : VARCHAR(50) NOT NULL
+  descripcion : TEXT NOT NULL
+  fecha_registro : DATE NOT NULL
+  ubicacion_fisica : VARCHAR(200)
+  estado : VARCHAR(20) NOT NULL
+  cadena_custodia : BOOLEAN NOT NULL
+  fecha_actualizacion : TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  + idx_prueba_tipo (tipo_prueba)
+  + idx_prueba_estado (estado)
 }
 
-entity "CREATE TABLE diligencia" as diligencia {
-  + id_diligencia SERIAL PRIMARY KEY
+entity "audiencia" as audiencia {
+  * id_audiencia : SERIAL <<PK>>
+  * id_caso : INTEGER NOT NULL <<FK>>
+  * id_juez : INTEGER NOT NULL <<FK>>
   --
-  fk_evaluacion INT REFERENCES evaluacion(id_evaluacion)
-  fk_investigacion INT REFERENCES investigacion(id_investigacion)
-  tipo VARCHAR(50) NOT NULL
-  prioridad INT
-  estado VARCHAR(20)
-  fecha_limite DATE
+  tipo_audiencia : VARCHAR(100) NOT NULL
+  fecha : DATE NOT NULL
+  hora_inicio : TIME NOT NULL
+  hora_fin : TIME
+  ubicacion : VARCHAR(200) NOT NULL
+  estado : VARCHAR(20) NOT NULL
+  resultado : TEXT
+  + idx_audiencia_fecha (fecha)
+  + idx_audiencia_tipo (tipo_audiencia)
+  + idx_audiencia_estado (estado)
 }
 
-entity "CREATE TABLE acusacion" as acusacion {
-  + id_acusacion SERIAL PRIMARY KEY
+entity "participante_audiencia" as part_audiencia {
+  * id_participante : SERIAL <<PK>>
+  * id_audiencia : INTEGER NOT NULL <<FK>>
+  * id_persona : INTEGER NOT NULL <<FK>>
   --
-  fk_investigacion INT REFERENCES investigacion(id_investigacion)
-  fk_fiscal INT REFERENCES fiscal(id_fiscal)
-  fk_juzgado INT REFERENCES juzgado(id_juzgado)
-  nro_expediente VARCHAR(20) UNIQUE
-  fecha_creacion DATE NOT NULL
-  estado VARCHAR(20) CHECK (estado IN ('borrador','formalizada','notificada','admitida','rechazada'))
+  tipo_participacion : VARCHAR(50) NOT NULL
+  rol : VARCHAR(50) NOT NULL
+  asistencia : BOOLEAN
+  observaciones : TEXT
+  + idx_participante_tipo (tipo_participacion)
+  + idx_participante_rol (rol)
+  + idx_uq_audiencia_persona_rol UNIQUE (id_audiencia, id_persona, rol)
 }
 
-entity "CREATE TABLE prueba" as prueba {
-  + id_prueba SERIAL PRIMARY KEY
+entity "sentencia" as sentencia {
+  * id_sentencia : SERIAL <<PK>>
+  * id_caso : INTEGER NOT NULL <<FK>>
+  * id_juez : INTEGER NOT NULL <<FK>>
   --
-  fk_investigacion INT REFERENCES investigacion(id_investigacion)
-  fk_acusacion INT REFERENCES acusacion(id_acusacion)
-  tipo VARCHAR(50)
-  valoracion VARCHAR(50)
+  fecha_emision : DATE NOT NULL
+  resultado : VARCHAR(50) NOT NULL
+  pena : TEXT
+  fundamentos : TEXT NOT NULL
+  observaciones : TEXT
+  estado : VARCHAR(20) NOT NULL
+  documento_digital : VARCHAR(255)
+  + idx_sentencia_resultado (resultado)
+  + idx_sentencia_fecha (fecha_emision)
+  + idx_sentencia_estado (estado)
 }
 
-entity "CREATE TABLE parte" as parte {
-  + id_parte SERIAL PRIMARY KEY
+entity "ejecucion_sentencia" as ejecucion {
+  * id_ejecucion : SERIAL <<PK>>
+  * id_sentencia : INTEGER NOT NULL <<FK>>
+  * id_responsable : INTEGER NOT NULL <<FK>>
   --
-  fk_acusacion INT REFERENCES acusacion(id_acusacion)
-  nombre VARCHAR(100) NOT NULL
-  rol VARCHAR(50) NOT NULL
+  fecha_inicio : DATE NOT NULL
+  fecha_fin_programada : DATE NOT NULL
+  tipo_ejecucion : VARCHAR(100) NOT NULL
+  estado : VARCHAR(20) NOT NULL
+  porcentaje_cumplimiento : DECIMAL(5,2) DEFAULT 0
+  observaciones : TEXT
+  fecha_actualizacion : TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  + idx_ejecucion_estado (estado)
+  + idx_ejecucion_tipo (tipo_ejecucion)
 }
 
-note bottom of denuncia
-  CREATE INDEX idx_denuncia_estado ON denuncia(estado);
-  CREATE INDEX idx_denuncia_fiscal ON denuncia(fk_fiscal);
-end note
+entity "informe_ejecucion" as informe {
+  * id_informe : SERIAL <<PK>>
+  * id_ejecucion : INTEGER NOT NULL <<FK>>
+  * id_autor : INTEGER NOT NULL <<FK>>
+  --
+  fecha_informe : DATE NOT NULL
+  tipo_informe : VARCHAR(50) NOT NULL
+  contenido : TEXT NOT NULL
+  conclusiones : TEXT
+  recomendaciones : TEXT
+  documento_digital : VARCHAR(255)
+  + idx_informe_fecha (fecha_informe)
+  + idx_informe_tipo (tipo_informe)
+}
 
-note bottom of evaluacion
-  CREATE INDEX idx_evaluacion_denuncia ON evaluacion(fk_denuncia);
-end note
+' Relaciones con restricciones de integridad referencial
+funcionario }|--|| persona : "id_persona REFERENCES persona(id_persona) ON DELETE RESTRICT"
+denuncia }|--|| caso : "id_caso REFERENCES caso(id_caso) ON DELETE CASCADE"
+caso ||--o{ rel_persona_caso : "id_caso REFERENCES caso(id_caso) ON DELETE CASCADE"
+persona ||--o{ rel_persona_caso : "id_persona REFERENCES persona(id_persona) ON DELETE RESTRICT"
+caso ||--o{ prueba : "id_caso REFERENCES caso(id_caso) ON DELETE CASCADE"
+caso ||--o{ audiencia : "id_caso REFERENCES caso(id_caso) ON DELETE CASCADE"
+caso |o--o| sentencia : "id_caso REFERENCES caso(id_caso) ON DELETE RESTRICT"
+sentencia |o--o| ejecucion : "id_sentencia REFERENCES sentencia(id_sentencia) ON DELETE RESTRICT"
+audiencia ||--o{ part_audiencia : "id_audiencia REFERENCES audiencia(id_audiencia) ON DELETE CASCADE"
+persona ||--o{ part_audiencia : "id_persona REFERENCES persona(id_persona) ON DELETE RESTRICT"
+ejecucion ||--o{ informe : "id_ejecucion REFERENCES ejecucion_sentencia(id_ejecucion) ON DELETE CASCADE"
+funcionario ||--o{ prueba : "id_registrador REFERENCES funcionario(id_funcionario) ON DELETE RESTRICT"
+funcionario ||--o{ caso : "id_fiscal_asignado REFERENCES funcionario(id_funcionario) ON DELETE RESTRICT"
+funcionario ||--o{ audiencia : "id_juez REFERENCES funcionario(id_funcionario) ON DELETE RESTRICT"
+funcionario ||--o{ sentencia : "id_juez REFERENCES funcionario(id_funcionario) ON DELETE RESTRICT"
+funcionario ||--o{ ejecucion : "id_responsable REFERENCES funcionario(id_funcionario) ON DELETE RESTRICT"
+funcionario ||--o{ informe : "id_autor REFERENCES funcionario(id_funcionario) ON DELETE RESTRICT"
 
-note bottom of investigacion
-  CREATE INDEX idx_investigacion_evaluacion ON investigacion(fk_evaluacion);
-  CREATE INDEX idx_investigacion_estado ON investigacion(estado);
-end note
-
-note bottom of acusacion
-  CREATE INDEX idx_acusacion_investigacion ON acusacion(fk_investigacion);
-  CREATE INDEX idx_acusacion_juzgado ON acusacion(fk_juzgado);
-end note
 @enduml

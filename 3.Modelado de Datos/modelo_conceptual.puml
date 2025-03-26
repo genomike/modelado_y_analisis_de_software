@@ -1,92 +1,129 @@
-@startuml
-' === ENTIDADES PRINCIPALES ===
-entity Ciudadano {
-  + dni (PK)
+@startuml Modelo Conceptual del Sistema Judicial
+
+' Entidades principales
+entity "Caso" as caso {
+  * id_caso
   --
-  nombre
-  telefono
-  email
+  número_caso
+  fecha_apertura
+  estado
+  descripción
 }
 
-entity Denuncia {
-  + codigo (PK)
+entity "Persona" as persona {
+  * id_persona
   --
-  fecha_creacion
-  descripcion
+  nombre
+  apellidos
+  documento_identidad
+  tipo_documento
+}
+
+entity "Denuncia" as denuncia {
+  * id_denuncia
+  --
+  fecha_registro
+  descripción
+  lugar_hechos
+}
+
+entity "Prueba" as prueba {
+  * id_prueba
+  --
+  tipo
+  descripción
+  fecha_registro
+}
+
+entity "Audiencia" as audiencia {
+  * id_audiencia
+  --
+  fecha
+  tipo
   estado
 }
 
-entity Fiscal {
-  + id (PK)
+entity "Sentencia" as sentencia {
+  * id_sentencia
   --
-  nombre
-  especialidad
+  fecha_emisión
+  resultado
+  fundamentos
 }
 
-entity Evaluacion {
-  + id (PK)
+entity "EjecuciónSentencia" as ejecucion {
+  * id_ejecución
   --
   fecha_inicio
+  tipo_ejecución
   estado
 }
 
-entity Diligencia {
-  + id (PK)
+entity "FuncionarioJudicial" as funcionario {
+  * id_funcionario
   --
-  tipo
-  prioridad
-  estado
-  fecha_limite
+  cargo
+  jurisdicción
+  dependencia
 }
 
-entity Investigacion {
-  + id (PK)
-  --
-  fase
-  estado
+' Relaciones tipo rol
+entity "Denunciante" as denunciante {
 }
 
-entity Prueba {
-  + id (PK)
-  --
-  tipo
-  valoracion
+entity "Denunciado" as denunciado {
 }
 
-entity Acusacion {
-  + id (PK)
-  --
-  nro_expediente
-  fecha_creacion
-  estado
+entity "Fiscal" as fiscal {
 }
 
-entity Parte {
-  + id (PK)
-  --
-  nombre
-  rol
+entity "Juez" as juez {
 }
 
-entity Juzgado {
-  + id (PK)
-  --
-  numero
-  jurisdiccion
+entity "Policía" as policia {
 }
 
-' === RELACIONES ===
-Ciudadano "1" -- "n" Denuncia : Realiza >
-Denuncia "1" -- "1" Evaluacion : Genera >
-Denuncia "n" -- "1" Fiscal : Asignada >
-Fiscal "1" -- "n" Evaluacion : Realiza >
-Evaluacion "1" -- "n" Diligencia : Requiere >
-Evaluacion "1" -- "0..1" Investigacion : Inicia >
-Investigacion "1" -- "n" Diligencia : Ejecuta >
-Investigacion "1" -- "n" Prueba : Recolecta >
-Investigacion "0..1" -- "0..1" Acusacion : Formaliza >
-Acusacion "1" -- "n" Prueba : Contiene >
-Acusacion "1" -- "n" Parte : Involucra >
-Fiscal "1" -- "n" Acusacion : Presenta >
-Juzgado "1" -- "n" Acusacion : Recibe >
+entity "Abogado" as abogado {
+}
+
+entity "Testigo" as testigo {
+}
+
+entity "Perito" as perito {
+}
+
+entity "Acusado" as acusado {
+}
+
+entity "Condenado" as condenado {
+}
+
+' Relaciones principales
+denuncia "1" -- "1..*" denunciante
+denuncia "1" -- "1..*" denunciado
+denuncia "1..*" -- "1" caso
+
+persona <|-- denunciante
+persona <|-- denunciado
+persona <|-- testigo
+persona <|-- acusado
+persona <|-- condenado
+
+funcionario <|-- fiscal
+funcionario <|-- juez
+funcionario <|-- policia
+funcionario <|-- abogado
+funcionario <|-- perito
+
+caso "1" -- "0..*" prueba
+caso "1" -- "0..*" audiencia
+caso "1" -- "0..1" sentencia
+sentencia "1" -- "0..1" ejecucion
+
+fiscal "1..*" -- "0..*" caso : dirige
+juez "1" -- "0..*" audiencia : preside
+juez "1" -- "0..*" sentencia : emite
+policia "1..*" -- "0..*" caso : investiga
+perito "0..*" -- "0..*" prueba : analiza
+
 @enduml
